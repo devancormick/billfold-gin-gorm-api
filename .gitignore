@@ -1,0 +1,9 @@
+.env
+*.db
+app.db
+/tmp
+.DS_Store
+vendor/
+jwtsecret.key
+billfold-api
+logs/*.log
