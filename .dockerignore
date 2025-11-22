@@ -1,0 +1,5 @@
+.env
+.git
+*.db
+app.db
+jwtsecret.key
