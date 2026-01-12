@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Billfold — API Demo Dashboard</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #121820;
+    --panel-2: #171f2a;
+    --border: #232d3a;
+    --text: #e6edf3;
+    --muted: #8b98a5;
+    --accent: #4f8cff;
+    --accent-2: #35c98f;
+    --danger: #ff5f5f;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f7fa;
+      --panel: #ffffff;
+      --panel-2: #f0f3f7;
+      --border: #dde3ea;
+      --text: #1b2430;
+      --muted: #5a6472;
+      --accent: #2f6fed;
+      --accent-2: #1f9d6b;
+      --danger: #d3453f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1 .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  header .links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    margin-left: 16px;
+  }
+  header .links a:hover { color: var(--accent); }
+
+  #status-strip {
+    display: flex;
+    gap: 18px;
+    padding: 10px 28px;
+    font-size: 12px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+    flex-wrap: wrap;
+  }
+  #status-strip span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .dot.ok { background: var(--accent-2); }
+  .dot.bad { background: var(--danger); }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 800px) {
+    main { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  input, select {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 13px;
+  }
+  input:focus, select:focus { outline: 1px solid var(--accent); }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  button {
+    margin-top: 14px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  button.danger { background: var(--danger); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .msg {
+    margin-top: 10px;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    display: none;
+    word-break: break-word;
+  }
+  .msg.show { display: block; }
+  .msg.ok { background: rgba(53,201,143,0.12); color: var(--accent-2); }
+  .msg.err { background: rgba(255,95,95,0.12); color: var(--danger); }
+
+  .balance {
+    font-size: 34px;
+    font-weight: 700;
+    margin: 4px 0 2px;
+  }
+  .balance-sub { font-size: 12px; color: var(--muted); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; }
+  tr:last-child td { border-bottom: none; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pill.credit { background: rgba(53,201,143,0.15); color: var(--accent-2); }
+  .pill.debit { background: rgba(255,95,95,0.15); color: var(--danger); }
+
+  .empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+  code {
+    background: var(--panel-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .signed-in-as { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .signed-in-as b { color: var(--text); }
+  .tabbar { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tabbar button {
+    margin: 0;
+    flex: 1;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .tabbar button.active { background: var(--accent); color: white; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Billfold <span class="badge">DEMO</span></h1>
+  <div class="links">
+    <a href="/swagger/index.html">Swagger</a>
+    <a href="/api">API index</a>
+    <a href="https://github.com/devancormick/billfold-gin-gorm-api" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</header>
+
+<div id="status-strip">
+  <span><span class="dot" id="dot-health"></span> API</span>
+  <span><span class="dot" id="dot-ready"></span> MariaDB</span>
+  <span id="base-url"></span>
+</div>
+
+<main>
+  <div>
+    <div class="card" id="auth-card">
+      <h2>Account</h2>
+      <div class="tabbar">
+        <button id="tab-login" class="active">Login</button>
+        <button id="tab-register">Register</button>
+      </div>
+
+      <div id="form-login">
+        <label>Username</label>
+        <input id="login-username" placeholder="alice" />
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="••••••••" />
+        <button id="btn-login">Sign in</button>
+      </div>
+
+      <div id="form-register" style="display:none">
+        <label>Username</label>
+        <input id="reg-username" placeholder="alice" />
+        <label>Email</label>
+        <input id="reg-email" placeholder="alice@example.com" />
+        <label>Password</label>
+        <input id="reg-password" type="password" placeholder="min 8 characters" />
+        <button id="btn-register">Create account</button>
+      </div>
+
+      <div class="msg" id="auth-msg"></div>
+    </div>
+
+    <div class="card" id="session-card" style="display:none">
+      <h2>Session</h2>
+      <div class="signed-in-as">Signed in as <b id="whoami">—</b></div>
+      <button class="secondary" id="btn-logout">Sign out</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="card" id="wallet-card" style="display:none">
+      <h2>Wallet</h2>
+      <div class="balance" id="wallet-balance">$0.00</div>
+      <div class="balance-sub">user_id <code id="wallet-userid">—</code></div>
+
+      <label>Amount (USD)</label>
+      <div class="row">
+        <input id="adjust-amount" type="number" min="0.01" step="0.01" placeholder="25.00" />
+        <select id="adjust-type">
+          <option value="credit">Credit</option>
+          <option value="debit">Debit</option>
+        </select>
+      </div>
+      <label>Reference <span class="hint" style="margin:0">(optional)</span></label>
+      <input id="adjust-reference" placeholder="top-up via card" />
+      <button id="btn-adjust">Apply</button>
+      <div class="hint">Each click generates a fresh idempotency key client-side. Re-submitting the exact same key would no-op instead of double-applying — that's enforced server-side, not in this UI.</div>
+      <div class="msg" id="wallet-msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Recent users</h2>
+      <div id="users-list" class="empty">Loading…</div>
+    </div>
+
+    <div class="card">
+      <h2>Recent posts</h2>
+      <div id="posts-list" class="empty">Loading…</div>
+    </div>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var API = location.origin + "/api/v1";
+  var token = localStorage.getItem("billfold_token") || null;
+  var user = JSON.parse(localStorage.getItem("billfold_user") || "null");
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function showMsg(el, text, ok) {
+    el.textContent = text;
+    el.className = "msg show " + (ok ? "ok" : "err");
+  }
+
+  function fmtCents(c) {
+    return "$" + (c / 100).toFixed(2);
+  }
+
+  function authHeaders() {
+    return token ? { "Authorization": "Bearer " + token } : {};
+  }
+
+  async function api(path, opts) {
+    opts = opts || {};
+    var res = await fetch(API + path, {
+      method: opts.method || "GET",
+      headers: Object.assign(
+        { "Content-Type": "application/json" },
+        authHeaders(),
+        opts.headers || {}
+      ),
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) {}
+    if (!res.ok) {
+      var msg = (data && (data.error || data.details)) || (res.status + " " + res.statusText);
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  function setSession(t, u) {
+    token = t;
+    user = u;
+    localStorage.setItem("billfold_token", t);
+    localStorage.setItem("billfold_user", JSON.stringify(u));
+    renderSession();
+    loadWallet();
+  }
+
+  function clearSession() {
+    token = null;
+    user = null;
+    localStorage.removeItem("billfold_token");
+    localStorage.removeItem("billfold_user");
+    renderSession();
+  }
+
+  function renderSession() {
+    if (token && user) {
+      $("auth-card").style.display = "none";
+      $("session-card").style.display = "block";
+      $("wallet-card").style.display = "block";
+      $("whoami").textContent = user.username + " (id " + user.ID + ")";
+    } else {
+      $("auth-card").style.display = "block";
+      $("session-card").style.display = "none";
+      $("wallet-card").style.display = "none";
+    }
+  }
+
+  async function loadWallet() {
+    if (!user) return;
+    $("wallet-userid").textContent = user.ID;
+    try {
+      var w = await api("/payments/wallets/" + user.ID);
+      $("wallet-balance").textContent = fmtCents(w.balance_cents);
+    } catch (e) {
+      // no wallet yet — first adjustment creates it
+      $("wallet-balance").textContent = fmtCents(0);
+    }
+  }
+
+  function genIdempotencyKey() {
+    return "dash-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+  }
+
+  async function loadUsers() {
+    var el = $("users-list");
+    try {
+      var data = await api("/users?limit=5");
+      if (!data.users || data.users.length === 0) {
+        el.className = "empty";
+        el.textContent = "No users yet.";
+        return;
+      }
+      var rows = data.users.map(function (u) {
+        return "<tr><td>" + u.ID + "</td><td>" + escapeHtml(u.username) +
+          "</td><td>" + escapeHtml(u.email) + "</td></tr>";
+      }).join("");
+      el.className = "";
+      el.innerHTML = "<table><thead><tr><th>ID</th><th>Username</th><th>Email</th></tr></thead><tbody>" + rows + "</tbody></table>";
+    } catch (e) {
+      el.className = "empty";
+      el.textContent = "Could not load users: " + e.message;
+    }
+  }
+
+  async function loadPosts() {
+    var el = $("posts-list");
+    try {
+      var posts = await api("/posts");
+      if (!posts || posts.length === 0) {
+        el.className = "empty";
+        el.textContent = "No posts yet.";
+        return;
+      }
+      var rows = posts.slice(0, 5).map(function (p) {
+        var author = (p.author && p.author.username) ? p.author.username : ("user " + p.user_id);
+        var tags = (p.tags || []).map(function (t) { return t.name; }).join(", ");
+        return "<tr><td>" + escapeHtml(p.title) + "</td><td>" + escapeHtml(author) +
+          "</td><td>" + (p.published ?
+            "<span class=\"pill credit\">published</span>" :
+            "<span class=\"pill debit\">draft</span>") +
+          "</td><td>" + escapeHtml(tags) + "</td></tr>";
+      }).join("");
+      el.className = "";
+      el.innerHTML = "<table><thead><tr><th>Title</th><th>Author</th><th>Status</th><th>Tags</th></tr></thead><tbody>" + rows + "</tbody></table>";
+    } catch (e) {
+      el.className = "empty";
+      el.textContent = "Could not load posts: " + e.message;
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  async function checkStatus() {
+    try {
+      await fetch(location.origin + "/health").then(function (r) {
+        $("dot-health").className = "dot " + (r.ok ? "ok" : "bad");
+      });
+    } catch (e) { $("dot-health").className = "dot bad"; }
+    try {
+      await fetch(location.origin + "/ready").then(function (r) {
+        $("dot-ready").className = "dot " + (r.ok ? "ok" : "bad");
+      });
+    } catch (e) { $("dot-ready").className = "dot bad"; }
+  }
+
+  // Tabs
+  $("tab-login").addEventListener("click", function () {
+    $("tab-login").classList.add("active");
+    $("tab-register").classList.remove("active");
+    $("form-login").style.display = "block";
+    $("form-register").style.display = "none";
+  });
+  $("tab-register").addEventListener("click", function () {
+    $("tab-register").classList.add("active");
+    $("tab-login").classList.remove("active");
+    $("form-register").style.display = "block";
+    $("form-login").style.display = "none";
+  });
+
+  $("btn-login").addEventListener("click", async function () {
+    var msg = $("auth-msg");
+    try {
+      var data = await api("/auth/login", {
+        method: "POST",
+        body: {
+          username: $("login-username").value.trim(),
+          password: $("login-password").value,
+        },
+      });
+      setSession(data.token, data.user);
+      showMsg(msg, "Signed in.", true);
+      loadUsers();
+    } catch (e) {
+      showMsg(msg, e.message, false);
+    }
+  });
+
+  $("btn-register").addEventListener("click", async function () {
+    var msg = $("auth-msg");
+    try {
+      var data = await api("/auth/register", {
+        method: "POST",
+        body: {
+          username: $("reg-username").value.trim(),
+          email: $("reg-email").value.trim(),
+          password: $("reg-password").value,
+        },
+      });
+      setSession(data.token, data.user);
+      showMsg(msg, "Account created and signed in.", true);
+      loadUsers();
+    } catch (e) {
+      showMsg(msg, e.message, false);
+    }
+  });
+
+  $("btn-logout").addEventListener("click", function () {
+    clearSession();
+  });
+
+  $("btn-adjust").addEventListener("click", async function () {
+    var msg = $("wallet-msg");
+    var dollars = parseFloat($("adjust-amount").value);
+    if (!dollars || dollars <= 0) {
+      showMsg(msg, "Enter an amount greater than 0.", false);
+      return;
+    }
+    var body = {
+      user_id: user.ID,
+      type: $("adjust-type").value,
+      amount_cents: Math.round(dollars * 100),
+      idempotency_key: genIdempotencyKey(),
+      reference: $("adjust-reference").value.trim(),
+    };
+    try {
+      await api("/payments/adjust", { method: "POST", body: body });
+      showMsg(msg, "Applied.", true);
+      $("adjust-amount").value = "";
+      $("adjust-reference").value = "";
+      loadWallet();
+    } catch (e) {
+      showMsg(msg, e.message, false);
+    }
+  });
+
+  $("base-url").textContent = "base: " + API;
+
+  renderSession();
+  checkStatus();
+  loadUsers();
+  loadPosts();
+  if (token && user) loadWallet();
+})();
+</script>
+</body>
+</html>
