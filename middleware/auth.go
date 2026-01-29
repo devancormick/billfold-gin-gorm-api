@@ -34,3 +34,4 @@ func RequireAuth() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
