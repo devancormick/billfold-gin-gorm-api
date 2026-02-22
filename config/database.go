@@ -51,3 +51,4 @@ func ConnectDatabase() {
 	DB = db
 	log.Println("Database connected successfully")
 }
+
