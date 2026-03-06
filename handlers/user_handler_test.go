@@ -87,3 +87,4 @@ func TestCreateUser(t *testing.T) {
 
 	config.DB.Exec("DELETE FROM users")
 }
+
