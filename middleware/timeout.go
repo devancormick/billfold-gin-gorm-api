@@ -19,3 +19,4 @@ func TimeoutMiddleware(d time.Duration) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
