@@ -160,3 +160,4 @@ InfluxDB and Sentry are not yet wired in production — see below.
 
 - **InfluxDB metrics**: the client library (`influxdata/influxdb-client-go/v2`) targets the v2 HTTP API; the InfluxDB installed on the production host is v3 (different wire protocol). `INFLUX_URL` is left unset, so `config.RecordRequestLatency` no-ops safely. Needs either a v2-compatible client swap or a v3-installed instance to activate.
 - **Sentry**: `SENTRY_DSN` is unset in production; error tracking is inactive until a DSN is provided.
+
