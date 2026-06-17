@@ -7,3 +7,4 @@ vendor/
 jwtsecret.key
 billfold-api
 logs/*.log
+
