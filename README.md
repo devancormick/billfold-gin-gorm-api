@@ -4,6 +4,32 @@ Go/Gin REST API for transactional payments and credits, built on MariaDB (GORM) 
 
 **Live:** `https://billfold.ddns.net/api`
 
+## Architecture
+
+```mermaid
+flowchart LR
+    client[Client]
+
+    subgraph api[Gin API]
+        cors[CORS]
+        sentryMw[Sentry MW]
+        metrics[Metrics MW]
+        timeout[Timeout MW]
+        auth[Auth MW - JWT]
+        handlers[Handlers]
+    end
+
+    db[(MariaDB via GORM)]
+    influx[(InfluxDB)]
+    sentry[Sentry]
+
+    client --> cors --> sentryMw --> metrics --> timeout --> handlers
+    handlers -. protected routes .-> auth
+    handlers --> db
+    metrics --> influx
+    sentryMw --> sentry
+```
+
 ## Stack
 
 Go, Gin, GORM (MariaDB), InfluxDB, Sentry, Swagger/OpenAPI annotations, Docker, GitLab CI.
@@ -38,6 +64,36 @@ billfold-gin-gorm-api/
 - Row locking (`SELECT ... FOR UPDATE`) on the wallet row prevents lost updates when concurrent requests hit the same wallet under peak load.
 - Every adjustment requires a client-supplied `idempotency_key`, so retried requests (timeouts, load-balancer retries) are safely no-ops instead of double-applying.
 - `/payments/*` routes require a valid JWT (`middleware.RequireAuth`) so balance mutations can't be triggered by unauthenticated callers.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant H as AdjustBalance handler
+    participant DB as MariaDB (tx)
+
+    C->>H: POST /payments/adjust (idempotency_key)
+    H->>DB: BEGIN
+    H->>DB: SELECT transaction WHERE idempotency_key = ?
+    alt already applied
+        DB-->>H: existing row found
+        H->>DB: COMMIT (no-op)
+        H-->>C: 200 prior transaction
+    else new request
+        DB-->>H: not found
+        H->>DB: SELECT wallet FOR UPDATE
+        DB-->>H: wallet locked
+        H->>H: compute new balance
+        alt debit would overdraw
+            H->>DB: ROLLBACK
+            H-->>C: 422 insufficient balance
+        else balance ok
+            H->>DB: UPDATE wallet balance
+            H->>DB: INSERT transaction (ledger)
+            H->>DB: COMMIT
+            H-->>C: 200 balance adjusted
+        end
+    end
+```
 
 ## API Reference
 
