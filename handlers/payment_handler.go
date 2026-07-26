@@ -8,6 +8,7 @@ import (
 	"github.com/devancormick/billfold-gin-gorm-api/models"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // AdjustBalanceInput is the request body for crediting or debiting a wallet.
@@ -60,7 +61,7 @@ func AdjustBalance(c *gin.Context) {
 
 		var wallet models.Wallet
 		// Row lock prevents lost updates when two requests hit the same wallet at once
-		if err := db.Clauses().Set("gorm:query_option", "FOR UPDATE").
+		if err := db.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where("user_id = ?", input.UserID).
 			First(&wallet).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
